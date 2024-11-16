@@ -1,3 +1,4 @@
+<!-- player.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,6 +16,11 @@
             width: 100%;
             height: auto;
         }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -22,22 +28,30 @@
         <video id="videoPlayer" controls autoplay>
             您的浏览器不支持 HTML5 视频播放
         </video>
+        <div id="errorMessage" class="error-message"></div>
     </div>
 
     <script>
-        // 获取URL参数中的视频地址
-        const urlParams = new URLSearchParams(window.location.search);
-        const videoUrl = urlParams.get('video');
-        
-        // 设置视频源
         const videoPlayer = document.getElementById('videoPlayer');
-        if (videoUrl) {
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 获取URL参数中的视频路径
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoPath = urlParams.get('video');
+
+        if (videoPath) {
+            // 构建完整的视频URL
+            const baseUrl = window.location.origin + '/' + window.location.pathname.split('/')[1];
+            const videoUrl = `${baseUrl}/${videoPath}`;
+            
             videoPlayer.src = videoUrl;
+        } else {
+            errorMessage.textContent = '未找到视频路径';
         }
 
         // 错误处理
         videoPlayer.onerror = function() {
-            alert('视频加载失败，请检查视频地址是否正确');
+            errorMessage.textContent = '视频加载失败，请检查视频地址是否正确';
         };
     </script>
 </body>
