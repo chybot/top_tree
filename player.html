@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频播放</title>
+    <style>
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <video id="videoPlayer" controls autoplay>
+            您的浏览器不支持 HTML5 视频播放
+        </video>
+    </div>
+
+    <script>
+        // 获取URL参数中的视频地址
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoUrl = urlParams.get('video');
+        
+        // 设置视频源
+        const videoPlayer = document.getElementById('videoPlayer');
+        if (videoUrl) {
+            videoPlayer.src = videoUrl;
+        }
+
+        // 错误处理
+        videoPlayer.onerror = function() {
+            alert('视频加载失败，请检查视频地址是否正确');
+        };
+    </script>
+</body>
+</html>
