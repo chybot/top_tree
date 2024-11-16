@@ -36,10 +36,10 @@
         .video-name {
             flex-grow: 1;
         }
-        .video-download {
-            color: #0366d6;
-            text-decoration: none;
-            margin-right: 10px;
+        .video-size {
+            color: #666;
+            margin-left: 10px;
+            font-size: 0.9em;
         }
         #qrcode {
             margin: 20px auto;
@@ -84,14 +84,28 @@
     <script>
         // 配置
         const config = {
-            rawGitBaseUrl: 'https://raw.githubusercontent.com/chybot/top_tree/main/video/',
-            githubRepoUrl: 'https://github.com/chybot/top_tree/tree/main/video'
+            owner: 'chybot',
+            repo: 'top_tree',
+            branch: 'main',
+            path: 'video'
         };
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
 
         // 生成播放URL
         function generateVideoUrl(filename) {
-            const videoUrl = config.rawGitBaseUrl + filename;
-            return `${window.location.origin}${window.location.pathname.replace('index.html', '')}player.html?video=${encodeURIComponent(videoUrl)}`;
+            // 使用 GitHub Pages 的基础URL
+            const baseUrl = `https://${config.owner}.github.io/${config.repo}`;
+            // 构建完整的视频URL
+            const videoUrl = `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${config.path}/${filename}`;
+            return `${baseUrl}/player.html?video=${encodeURIComponent(videoUrl)}`;
         }
 
         // 生成二维码
@@ -130,54 +144,45 @@
             const videoListDiv = document.getElementById('videoList');
             
             try {
-                // 获取GitHub页面内容
-                const response = await fetch(config.githubRepoUrl);
-                const html = await response.text();
+                // 使用 GitHub API 获取文件列表
+                const apiUrl = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.path}`;
+                const response = await fetch(apiUrl);
                 
-                // 创建一个临时的 DOM 解析器
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
+                if (!response.ok) {
+                    throw new Error(`GitHub API 返回错误: ${response.status}`);
+                }
                 
-                // 获取文件列表
-                const videoFiles = [];
-                const rows = doc.querySelectorAll('div.js-navigation-item');
-                rows.forEach(row => {
-                    const nameElement = row.querySelector('a[role="rowheader"]');
-                    if (nameElement) {
-                        const filename = nameElement.textContent.trim();
-                        if (filename.match(/\.(mp4|webm|ogg)$/i)) {
-                            videoFiles.push(filename);
-                        }
-                    }
-                });
-
+                const files = await response.json();
+                
                 // 清除加载提示
                 videoListDiv.innerHTML = '';
-
-                // 显示视频列表
+                
+                // 过滤视频文件
+                const videoFiles = files.filter(file => 
+                    file.name.match(/\.(mp4|webm|ogg|mov|m4v)$/i)
+                );
+                
                 if (videoFiles.length === 0) {
                     videoListDiv.innerHTML = '<div class="error-message">未找到视频文件</div>';
                     return;
                 }
 
-                videoFiles.forEach(filename => {
+                // 显示视频列表
+                videoFiles.forEach(file => {
                     const videoItem = document.createElement('div');
                     videoItem.className = 'video-item';
                     
                     const nameSpan = document.createElement('span');
                     nameSpan.className = 'video-name';
-                    nameSpan.textContent = filename;
+                    nameSpan.textContent = file.name;
                     
-                    const downloadLink = document.createElement('a');
-                    downloadLink.className = 'video-download';
-                    downloadLink.href = config.rawGitBaseUrl + filename;
-                    downloadLink.textContent = '下载';
-                    downloadLink.target = '_blank';
-                    downloadLink.onclick = (e) => e.stopPropagation();
+                    const sizeSpan = document.createElement('span');
+                    sizeSpan.className = 'video-size';
+                    sizeSpan.textContent = formatFileSize(file.size);
                     
                     videoItem.appendChild(nameSpan);
-                    videoItem.appendChild(downloadLink);
-                    videoItem.onclick = () => handleVideoSelect(filename);
+                    videoItem.appendChild(sizeSpan);
+                    videoItem.onclick = () => handleVideoSelect(file.name);
                     
                     videoListDiv.appendChild(videoItem);
                 });
